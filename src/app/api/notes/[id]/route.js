@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import {
+  validateId,
+  validateTitle,
+  validateContent,
+  sanitizeNoteInput,
+} from "@/lib/validations";
 
 export async function GET(request, { params }) {
   try {
-    const id = parseInt(params.id, 10);
+    const idValidation = validateId(params.id);
 
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid note id" }, { status: 400 });
+    if (!idValidation.valid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
     }
+
+    const id = idValidation.parsed;
 
     const note = await prisma.note.findUnique({
       where: { id },
@@ -28,11 +39,16 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const id = parseInt(params.id, 10);
+    const idValidation = validateId(params.id);
 
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid note id" }, { status: 400 });
+    if (!idValidation.valid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
     }
+
+    const id = idValidation.parsed;
 
     const existingNote = await prisma.note.findUnique({
       where: { id },
@@ -44,31 +60,33 @@ export async function PUT(request, { params }) {
 
     const body = await request.json();
     const data = {};
+    const { title, content } = body;
+    const cleanData = sanitizeNoteInput(title ?? "", content ?? "", body.pinned);
 
-    if (body.title !== undefined) {
-      const title = typeof body.title === "string" ? body.title.trim() : "";
+    if (title !== undefined) {
+      const titleValidation = validateTitle(title);
 
-      if (!title) {
+      if (!titleValidation.valid) {
         return NextResponse.json(
-          { error: "Title cannot be empty or whitespace only" },
+          { error: titleValidation.error },
           { status: 400 }
         );
       }
 
-      data.title = title;
+      data.title = cleanData.title;
     }
 
-    if (body.content !== undefined) {
-      const content = typeof body.content === "string" ? body.content.trim() : "";
+    if (content !== undefined) {
+      const contentValidation = validateContent(content);
 
-      if (!content) {
+      if (!contentValidation.valid) {
         return NextResponse.json(
-          { error: "Content cannot be empty or whitespace only" },
+          { error: contentValidation.error },
           { status: 400 }
         );
       }
 
-      data.content = content;
+      data.content = cleanData.content;
     }
 
     if (body.pinned !== undefined) {
@@ -91,11 +109,16 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const id = parseInt(params.id, 10);
+    const idValidation = validateId(params.id);
 
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid note id" }, { status: 400 });
+    if (!idValidation.valid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
     }
+
+    const id = idValidation.parsed;
 
     const existingNote = await prisma.note.findUnique({
       where: { id },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { validateNote, sanitizeNoteInput } from "@/lib/validations";
 
 export async function GET(request) {
     try {
@@ -47,28 +48,23 @@ export async function GET(request) {
 export async function POST(request) {
     try {
         const body = await request.json();
-        const title = typeof body.title === "string" ? body.title.trim() : "";
-        const content = typeof body.content === "string" ? body.content.trim() : "";
+        const { title, content, pinned } = body;
+        const validation = validateNote(title, content);
 
-        if (!title) {
+        if (!validation.valid) {
             return NextResponse.json(
-                { error: "Title is required and cannot be empty." },
+                {
+                    error: "Validation failed",
+                    details: validation.errors,
+                },
                 { status: 400 }
             );
         }
 
-        if (!content) {
-            return NextResponse.json(
-                { error: "Content is required and cannot be empty." },
-                { status: 400 }
-            );
-        }
+        const cleanData = sanitizeNoteInput(title, content, pinned);
 
         const note = await prisma.note.create({
-            data: {
-                title,
-                content,
-            },
+            data: cleanData,
         });
 
         return NextResponse.json(note, { status: 201 });
