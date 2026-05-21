@@ -7,9 +7,14 @@ import {
   sanitizeNoteInput,
 } from "@/lib/validations";
 
+async function resolveParams(params) {
+  return await Promise.resolve(params);
+}
+
 export async function GET(request, { params }) {
   try {
-    const idValidation = validateId(params.id);
+    const resolvedParams = await resolveParams(params);
+    const idValidation = validateId(resolvedParams?.id);
 
     if (!idValidation.valid) {
       return NextResponse.json(
@@ -39,7 +44,8 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const idValidation = validateId(params.id);
+    const resolvedParams = await resolveParams(params);
+    const idValidation = validateId(resolvedParams?.id);
 
     if (!idValidation.valid) {
       return NextResponse.json(
@@ -109,7 +115,8 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const idValidation = validateId(params.id);
+    const resolvedParams = await resolveParams(params);
+    const idValidation = validateId(resolvedParams?.id);
 
     if (!idValidation.valid) {
       return NextResponse.json(

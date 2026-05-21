@@ -15,13 +15,11 @@ export async function GET(request) {
                 {
                     title: {
                         contains: search,
-                        mode: "insensitive",
                     },
                 },
                 {
                     content: {
                         contains: search,
-                        mode: "insensitive",
                     },
                 },
             ];
